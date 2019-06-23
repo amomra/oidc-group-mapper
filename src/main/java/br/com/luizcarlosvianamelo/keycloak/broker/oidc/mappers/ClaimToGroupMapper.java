@@ -1,4 +1,4 @@
-package br.gov.itaipu.keycloak.broker.oidc.mappers;
+package br.com.luizcarlosvianamelo.keycloak.broker.oidc.mappers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;

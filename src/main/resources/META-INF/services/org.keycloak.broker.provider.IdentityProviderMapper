@@ -1,1 +1,1 @@
-br.gov.itaipu.keycloak.broker.oidc.mappers.ClaimToGroupMapper
+br.com.luizcarlosvianamelo.keycloak.broker.oidc.mappers.ClaimToGroupMapper
