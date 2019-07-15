@@ -34,6 +34,8 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
+    private static final String CONTAINS_TEXT = "contains_text";
+
     private static final String CREATE_GROUPS = "create_groups";
 
     static {
@@ -45,6 +47,14 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
         property.setHelpText("Name of claim to search for in token. This claim must be a string array with " +
                 "the names of the groups which the user is member. You can reference nested claims using a " +
                 "'.', i.e. 'address.locality'. To use dot (.) literally, escape it with backslash (\\.)");
+
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        CONFIG_PROPERTIES.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(CONTAINS_TEXT);
+        property.setLabel("Contains text");
+        property.setHelpText("Only sync groups that contains this text in its name. If empty, sync all groups.");
 
         property.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(property);
@@ -111,10 +121,11 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
 
         // check configurations
         String groupClaimName = mapperModel.getConfig().get(CLAIM);
+        String containsText = mapperModel.getConfig().get(CONTAINS_TEXT);
         Boolean createGroups = Boolean.valueOf(mapperModel.getConfig().get(CREATE_GROUPS));
 
         // do nothing if no claim was adjusted
-        if (groupClaimName == null || groupClaimName.length() == 0)
+        if (isEmpty(groupClaimName))
             return;
 
         // get new groups
@@ -141,11 +152,11 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
             newGroupsObj = newList;
         }
 
-        @SuppressWarnings("unchecked")
-        Set<String> newGroupsNames = new HashSet<>((List<String>) newGroupsObj);
-
         // get user current groups
-        Set<GroupModel> currentGroups = user.getGroups();
+        Set<GroupModel> currentGroups = user.getGroups()
+                .stream()
+                .filter(g -> isEmpty(containsText) || g.getName().contains(containsText))
+                .collect(Collectors.toSet());
 
         logger.debugf("Realm [%s], IdP [%s]: current groups for user [%s]: %s",
                 realm.getName(),
@@ -156,6 +167,13 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
                         .map(GroupModel::getName)
                         .collect(Collectors.joining(","))
         );
+
+        // filter the groups by its name
+        @SuppressWarnings("unchecked")
+        Set<String> newGroupsNames = ((List<String>) newGroupsObj)
+                .stream()
+                .filter(t -> isEmpty(containsText) || t.contains(containsText))
+                .collect(Collectors.toSet());
 
         // get new groups
         Set<GroupModel> newGroups = getNewGroups(realm, newGroupsNames, createGroups);
@@ -237,5 +255,9 @@ public class ClaimToGroupMapper extends AbstractClaimMapper {
         resultSet.removeAll(currentGroups);
 
         return resultSet;
+    }
+
+    private static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
     }
 }
