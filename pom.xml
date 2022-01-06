@@ -8,7 +8,7 @@
     <name>oidc-group-mapper</name>
 
     <properties>
-        <keycloak.version>4.8.3.Final</keycloak.version>
+        <keycloak.version>15.1.1</keycloak.version>
     </properties>
 
     <dependencies>
